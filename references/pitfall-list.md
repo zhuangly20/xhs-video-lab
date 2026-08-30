@@ -46,6 +46,7 @@
 - hf-mirror.com 的 LFS 重定向与新版 huggingface_hub 不兼容（`FileMetadataError`）→ **必须走代理直连 huggingface.co**，设 `http_proxy/https_proxy` 环境变量
 - large-v3 约 3.09GB，代理约 1.5-2MB/s，首次下载 30-40 分钟；下完后缓存在 workdir/models/ 离线复用
 - Windows 无符号链接权限会有 cache 警告，无害可忽略
+- **换 agent 后提示重新下载模型（已修复的坑）**：模型存在 workdir/models/（自包含设计），但其他 agent（豆包/通义/WorkBuddy 等的 agent 形态）自己写转写代码时会查**系统默认 HF 缓存**（`~/.cache/huggingface/hub`）——那里是空的就会重下 3GB。pipeline.py 的 `resolve_model_path()` 已支持双位置探测（素材库优先，默认缓存兜底，config 的 model_dir 最优先）；首次部署时可把 models 里的 `models--Systran--faster-whisper-*` 文件夹复制一份到默认缓存位置，让所有工具共享
 
 ### 3.2 转写速度与预期管理
 - 本机无 NVIDIA 显卡，CPU/int8 下约 **2 倍实时**（311 秒音频约 10 分钟，536 秒约 18 分钟）

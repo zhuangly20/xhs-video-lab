@@ -163,6 +163,25 @@ def fetch_meta(url: str) -> dict:
     return meta
 
 
+def resolve_model_path(model_name: str, workdir: Path):
+    """在多个已知位置查找已下载的模型快照；找到则返回可直接加载的路径，否则 None。
+
+    覆盖：素材库 models/、系统默认 HF 缓存（其他 agent/工具的默认下载位置）、config 指定目录。
+    """
+    candidates = [workdir / "models",
+                  Path.home() / ".cache" / "huggingface" / "hub"]
+    if CFG.get("model_dir"):
+        candidates.insert(0, Path(CFG["model_dir"]))
+    for base in candidates:
+        if not base.is_dir():
+            continue
+        for mdir in base.glob(f"models--*faster-whisper-{model_name}"):
+            for snap in sorted((mdir / "snapshots").glob("*")):
+                if (snap / "model.bin").exists():
+                    return str(snap)
+    return None
+
+
 def fmt_ts(seconds: float) -> str:
     ms = int(round(seconds * 1000))
     h, ms = divmod(ms, 3600_000)
@@ -182,15 +201,20 @@ def transcribe(audio: Path, workdir: Path, model_name: str, device: str,
         return out_json
 
     import os
-    if proxy:
-        os.environ["http_proxy"] = proxy
-        os.environ["https_proxy"] = proxy
-
     from faster_whisper import WhisperModel
     t0 = time.time()
-    log(f"  [转写] 模型={model_name} 设备={device}/{compute_type}（CPU 约为音频时长的 2 倍时间）")
-    model = WhisperModel(model_name, device=device, compute_type=compute_type,
-                         download_root=str(workdir / "models"))
+    existing = resolve_model_path(model_name, workdir)
+    if existing:
+        log(f"  [转写] 复用已有模型: {existing}")
+        model = WhisperModel(existing, device=device, compute_type=compute_type)
+    else:
+        if proxy:
+            os.environ["http_proxy"] = proxy
+            os.environ["https_proxy"] = proxy
+        log(f"  [转写] 未找到本地模型，开始下载 {model_name}（约3GB，走代理，只需一次）")
+        log(f"  [转写] 模型={model_name} 设备={device}/{compute_type}（CPU 约为音频时长的 2 倍时间）")
+        model = WhisperModel(model_name, device=device, compute_type=compute_type,
+                             download_root=str(workdir / "models"))
     segments, info = model.transcribe(str(audio), language=language or None,
                                       beam_size=5, vad_filter=True,
                                       vad_parameters={"min_silence_duration_ms": 500})

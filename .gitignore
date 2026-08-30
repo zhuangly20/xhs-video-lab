@@ -9,3 +9,7 @@ __pycache__/
 # OS junk
 .DS_Store
 Thumbs.db
+
+# git credential store 泄漏防护
+.git-credentials
+*git-credentials*
