@@ -1,0 +1,33 @@
+{
+  "id": "selftestcase0000000001",
+  "title": "自测案例：流水线冒烟测试",
+  "blogger": "测试博主",
+  "url": "https://www.xiaohongshu.com/explore/selftestcase0000000001",
+  "duration": 10,
+  "publishedAt": "2026-08-30",
+  "collectedAt": "2026-08-30",
+  "likes": 100, "comments": 2, "collects": 150, "shares": 3,
+  "field": "其他",
+  "hookType": "成果前置",
+  "tags": ["测试"],
+  "hook": {
+    "range": "0:00–0:03",
+    "quote": "这是测试钩子句子",
+    "type": "成果前置",
+    "explain": "自测夹具，验证 schema。"
+  },
+  "structure": [
+    {"time": "0:00", "label": "钩子", "desc": "测试"}
+  ],
+  "strengths": ["有具体数字证据 150 收藏"],
+  "weaknesses": ["仅 10 秒"],
+  "dataInsight": "收藏赞比 1.5，测试用。",
+  "scripts": [
+    {"quote": "结尾记得关注我", "scene": "测试 CTA 句式"}
+  ],
+  "highlights": {
+    "hook_kw": ["测试钩子"],
+    "gold_kw": ["金句"],
+    "cta_kw": ["关注我"]
+  }
+}

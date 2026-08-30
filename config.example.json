@@ -1,0 +1,13 @@
+{
+  "workdir": "",
+  "base_token": "",
+  "table_id": "",
+  "group_chat_id": "",
+  "proxy": "http://127.0.0.1:7897",
+  "direct_connect": true,
+  "model": "large-v3",
+  "device": "cpu",
+  "compute_type": "int8",
+  "language": "zh",
+  "ffmpeg_location": ""
+}

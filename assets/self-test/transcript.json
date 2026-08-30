@@ -1,0 +1,10 @@
+{
+  "language": "zh",
+  "language_probability": 0.99,
+  "duration": 10.0,
+  "segments": [
+    {"start": 0.0, "end": 2.5, "text": "这是测试钩子句子"},
+    {"start": 2.5, "end": 5.0, "text": "第二句是金句收藏赞比试金石"},
+    {"start": 5.0, "end": 10.0, "text": "结尾记得关注我"}
+  ]
+}

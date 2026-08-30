@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频拆解工作台</title>
+<style>
+:root {
+  --red: #ff2442;
+  --red-soft: #fff0f2;
+  --ink: #1f2329;
+  --sub: #646a73;
+  --line: #e5e6eb;
+  --bg: #f6f7f9;
+  --card: #ffffff;
+  --gold-bg: #fff8e1; --gold-bd: #ffd54f;
+  --green-bg: #e8f5e9; --green-bd: #66bb6a;
+  --blue-bg: #e3f2fd; --blue-bd: #42a5f5;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  background: var(--bg); color: var(--ink); font-size: 14px; line-height: 1.65;
+}
+header {
+  position: sticky; top: 0; z-index: 10; background: var(--card);
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; gap: 28px; padding: 0 24px; height: 56px;
+}
+.logo { font-weight: 700; font-size: 16px; }
+.logo em { color: var(--red); font-style: normal; }
+nav { display: flex; gap: 4px; flex: 1; }
+nav a {
+  text-decoration: none; color: var(--sub); padding: 6px 14px; border-radius: 8px;
+  font-weight: 500;
+}
+nav a:hover { background: var(--bg); }
+nav a.active { color: var(--red); background: var(--red-soft); font-weight: 600; }
+.snapshot { color: var(--sub); font-size: 12px; }
+main { max-width: 1180px; margin: 0 auto; padding: 20px 24px 60px; }
+
+.card {
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 18px 20px; margin-bottom: 16px;
+}
+.card h3 { font-size: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.card h3 .more { margin-left: auto; font-size: 12px; color: var(--sub); font-weight: 400; }
+
+/* 总览 */
+.stat-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; margin-bottom: 16px; }
+.stat {
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 14px 16px;
+}
+.stat .num { font-size: 22px; font-weight: 700; }
+.stat .num.red { color: var(--red); }
+.stat .lbl { color: var(--sub); font-size: 12px; margin-top: 2px; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.bar-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+.bar-row .dt { width: 64px; color: var(--sub); font-size: 12px; flex-shrink: 0; }
+.bar-row .bar { height: 22px; border-radius: 4px; background: linear-gradient(90deg,#ff7a8f,var(--red)); min-width: 8px; display: flex; align-items: center; }
+.bar-row .cnt { font-size: 12px; color: var(--sub); }
+.fbar-row { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
+.fbar-row .nm { width: 110px; font-size: 13px; flex-shrink: 0; }
+.fbar-row .bar { height: 22px; border-radius: 4px; background: linear-gradient(90deg,#8ecdfc,#3d8bfd); min-width: 8px; display: flex; align-items: center; padding-left: 8px; color: #fff; font-size: 12px; }
+
+.recent-item {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px;
+  cursor: pointer; border: 1px solid transparent;
+}
+.recent-item:hover { background: var(--bg); border-color: var(--line); }
+.recent-item .t { flex: 1; font-weight: 500; }
+.recent-item .m { color: var(--sub); font-size: 12px; flex-shrink: 0; }
+.recent-item .arrow { color: var(--red); }
+
+.insight { border-left: 3px solid var(--red); padding: 4px 0 4px 14px; margin: 14px 0; }
+.insight .it { font-weight: 600; margin-bottom: 4px; }
+.insight .id2 { color: var(--sub); font-size: 13px; }
+.insight .src { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+.insight .src a {
+  font-size: 12px; color: #3d8bfd; text-decoration: none; background: #f0f7ff;
+  padding: 2px 8px; border-radius: 10px;
+}
+
+/* 明细表 */
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); }
+th {
+  font-size: 12px; color: var(--sub); cursor: pointer; user-select: none;
+  white-space: nowrap; background: #fafbfc; position: sticky; top: 56px;
+}
+th:hover { color: var(--ink); }
+th .dir { color: var(--red); }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: var(--red-soft); }
+td .ct { color: var(--sub); font-size: 12px; }
+.chip { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; background: var(--bg); color: var(--sub); margin-right: 4px; }
+.chip.hook { background: var(--gold-bg); color: #b26a00; }
+
+/* 拆解页 */
+.detail-wrap { display: grid; grid-template-columns: 230px 1fr; gap: 16px; align-items: start; }
+.side-list { position: sticky; top: 72px; }
+.side-item {
+  padding: 10px 12px; border-radius: 10px; cursor: pointer; font-size: 13px;
+  border: 1px solid transparent; margin-bottom: 2px;
+}
+.side-item:hover { background: var(--bg); }
+.side-item.active { background: var(--red-soft); border-color: #ffc7cf; color: var(--red); font-weight: 600; }
+.side-item .sub2 { color: var(--sub); font-size: 12px; font-weight: 400; }
+
+.d-head .dt1 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+.d-head .meta { color: var(--sub); font-size: 13px; display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 8px; }
+.d-head .meta a { color: #3d8bfd; text-decoration: none; }
+.eng { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0 4px; }
+.eng span { background: var(--bg); border-radius: 8px; padding: 4px 10px; font-size: 13px; }
+.eng b { font-weight: 700; }
+.tags { margin-top: 8px; }
+.tags .chip { background: var(--red-soft); color: var(--red); }
+
+.quote-box {
+  background: var(--gold-bg); border-left: 4px solid var(--gold-bd);
+  padding: 12px 16px; border-radius: 0 10px 10px 0; margin: 8px 0;
+  font-size: 15px; font-weight: 600;
+}
+.hl-hook { background: var(--gold-bg); border-left: 4px solid var(--gold-bd); padding: 2px 8px; border-radius: 0 6px 6px 0; display: inline-block; }
+.hl-gold { background: var(--green-bg); border-left: 4px solid var(--green-bd); padding: 2px 8px; border-radius: 0 6px 6px 0; display: inline-block; }
+.hl-cta { background: var(--blue-bg); border-left: 4px solid var(--blue-bd); padding: 2px 8px; border-radius: 0 6px 6px 0; display: inline-block; }
+
+.tl { border-left: 2px solid var(--line); margin-left: 6px; padding-left: 18px; }
+.tl-item { position: relative; margin-bottom: 12px; }
+.tl-item::before {
+  content: ""; position: absolute; left: -24px; top: 6px; width: 10px; height: 10px;
+  border-radius: 50%; background: var(--red); border: 2px solid #fff; box-shadow: 0 0 0 1px var(--red);
+}
+.tl-item .tt { font-weight: 600; }
+.tl-item .tt .tm { color: var(--red); margin-right: 8px; font-variant-numeric: tabular-nums; }
+.tl-item .dd { color: var(--sub); font-size: 13px; }
+
+.sw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.sw-grid h4 { font-size: 13px; margin-bottom: 8px; }
+.sw-grid ul { padding-left: 18px; }
+.sw-grid li { margin-bottom: 8px; font-size: 13px; }
+.good h4 { color: #2e7d32; } .bad h4 { color: #c62828; }
+.good { background: #f6fbf6; border-radius: 10px; padding: 12px 14px; }
+.bad { background: #fdf6f6; border-radius: 10px; padding: 12px 14px; }
+
+.script-card {
+  border: 1px dashed #d3d6db; border-radius: 10px; padding: 10px 14px; margin-bottom: 10px;
+}
+.script-card .q { font-weight: 600; }
+.script-card .sc { color: var(--sub); font-size: 12px; margin-top: 2px; }
+.script-card .sc::before { content: "适用："; }
+
+.transcript { margin-top: 6px; }
+.tr-row { display: flex; gap: 12px; padding: 5px 8px; border-radius: 6px; }
+.tr-row:hover { background: var(--bg); }
+.tr-row .tm { color: var(--sub); font-variant-numeric: tabular-nums; font-size: 12px; width: 44px; flex-shrink: 0; padding-top: 2px; }
+.legend { display: flex; gap: 12px; margin: 8px 0; font-size: 12px; color: var(--sub); flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 12px; font-weight: 600; background: var(--gold-bg); color: #b26a00; }
+
+/* 明细表筛选工具条 */
+.list-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding: 12px 14px; margin-bottom: 12px; }
+.fsearch { flex: 1; min-width: 220px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; outline: none; }
+.fsearch:focus { border-color: var(--red); }
+.fsel { padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; background: #fff; color: var(--ink); max-width: 180px; }
+.fbtn { padding: 7px 14px; border: 1px solid var(--line); background: #fff; border-radius: 8px; font-size: 13px; cursor: pointer; color: var(--sub); }
+.fbtn:hover { color: var(--red); border-color: var(--red); }
+
+@media (max-width: 900px) {
+  .stat-grid { grid-template-columns: repeat(3, 1fr); }
+  .two-col { grid-template-columns: 1fr; }
+  .detail-wrap { grid-template-columns: 1fr; }
+  .side-list { position: static; display: flex; overflow-x: auto; gap: 6px; }
+  .side-item { white-space: nowrap; }
+  .sw-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🎬 <em>视频</em>拆解工作台</div>
+  <nav>
+    <a href="#/overview" data-tab="overview">📊 总览</a>
+    <a href="#/list" data-tab="list">📋 明细表</a>
+    <a href="#/detail" data-tab="detail">🎬 拆解库</a>
+  </nav>
+  <div class="snapshot">数据快照 <span id="genDate"></span></div>
+</header>
+<main id="app"></main>
+
+<script src="data.js"></script>
+<script>
+const D = window.CASE_DATA;
+const app = document.getElementById("app");
+
+const fmt = n => n >= 10000 ? (n / 10000).toFixed(1).replace(/\.0$/, "") + "万" : String(n);
+const mmss = s => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const byId = id => D.cases.find(c => c.id === id);
+const sortedByDate = () => [...D.cases].sort((a, b) => (b.collectedAt + b.id).localeCompare(a.collectedAt + a.id));
+
+/* ---------- 总览 ---------- */
+function renderOverview() {
+  const cs = D.cases;
+  const sum = k => cs.reduce((a, c) => a + c[k], 0);
+  const bloggers = new Set(cs.map(c => c.blogger)).size;
+  const fields = {};
+  cs.forEach(c => fields[c.field] = (fields[c.field] || 0) + 1);
+  const days = {};
+  cs.forEach(c => days[c.collectedAt] = (days[c.collectedAt] || 0) + 1);
+  const dayKeys = Object.keys(days).sort();
+  const maxDay = Math.max(...Object.values(days));
+  const maxField = Math.max(...Object.values(fields));
+
+  let h = `<div class="stat-grid">
+    <div class="stat"><div class="num red">${cs.length}</div><div class="lbl">已入库案例</div></div>
+    <div class="stat"><div class="num">${bloggers}</div><div class="lbl">博主</div></div>
+    <div class="stat"><div class="num">${Object.keys(fields).length}</div><div class="lbl">覆盖领域</div></div>
+    <div class="stat"><div class="num">${fmt(sum("likes"))}</div><div class="lbl">累计点赞</div></div>
+    <div class="stat"><div class="num">${fmt(sum("collects"))}</div><div class="lbl">累计收藏</div></div>
+    <div class="stat"><div class="num">${fmt(sum("comments"))}</div><div class="lbl">累计评论</div></div>
+    <div class="stat"><div class="num">${fmt(sum("shares"))}</div><div class="lbl">累计分享</div></div>
+  </div>`;
+
+  h += `<div class="two-col">
+    <div class="card"><h3>📈 每日新增（按采集日期）<span class="more">共 ${cs.length} 条</span></h3>
+      ${dayKeys.map(d => `<div class="bar-row"><span class="dt">${d.slice(5)}</span>
+        <div class="bar" style="width:${days[d] / maxDay * 78}%"></div><span class="cnt">×${days[d]}</span></div>`).join("")}
+    </div>
+    <div class="card"><h3>🗂 领域分布</h3>
+      ${Object.entries(fields).sort((a, b) => b[1] - a[1]).map(([f, n]) =>
+        `<div class="fbar-row"><span class="nm">${esc(f)}</span>
+         <div class="bar" style="width:${n / maxField * 70 + 6}%">${n} 条</div></div>`).join("")}
+    </div>
+  </div>`;
+
+  h += `<div class="card"><h3>🆕 最新入库案例<span class="more">点击直达拆解</span></h3>
+    ${sortedByDate().slice(0, 5).map(c => `
+      <div class="recent-item" onclick="location.hash='#/detail/${c.id}'">
+        <span class="t">${esc(c.title)}</span>
+        <span class="m">${esc(c.blogger)} · 👍${fmt(c.likes)} · ⭐${fmt(c.collects)}</span>
+        <span class="m">${c.collectedAt.slice(5)} 入库</span><span class="arrow">→</span>
+      </div>`).join("")}
+  </div>`;
+
+  h += `<div class="card"><h3>💡 最新运营经验<span class="more">基于全部 ${cs.length} 条案例交叉分析 · ${D.generatedAt} 更新</span></h3>
+    ${D.insights.map(i => `
+      <div class="insight">
+        <div class="it">${esc(i.title)}</div>
+        <div class="id2">${esc(i.detail)}</div>
+        <div class="src">${i.sources.map(sid => { const c = byId(sid); return c ? `<a href="#/detail/${sid}">${esc(c.title.slice(0, 16))}…</a>` : ""; }).join("")}</div>
+      </div>`).join("")}
+  </div>`;
+  return h;
+}
+
+/* ---------- 明细表 ---------- */
+let sortKey = "collectedAt", sortDir = -1;
+let searchQ = "";
+const FILTER_COLS = [["blogger", "博主"], ["field", "领域"], ["hookType", "钩子类型"]];
+let colFilters = { blogger: "", field: "", hookType: "" };
+
+function listRowsFiltered() {
+  const q = searchQ.trim().toLowerCase();
+  return [...D.cases].filter(c => {
+    if (colFilters.blogger && c.blogger !== colFilters.blogger) return false;
+    if (colFilters.field && c.field !== colFilters.field) return false;
+    if (colFilters.hookType && c.hookType !== colFilters.hookType) return false;
+    if (q) {
+      const hay = [c.title, c.blogger, c.field, c.hookType, ...(c.tags || [])].join(" ").toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  }).sort((a, b) => {
+    const x = a[sortKey], y = b[sortKey];
+    return (typeof x === "number" ? x - y : String(x).localeCompare(String(y))) * sortDir;
+  });
+}
+function listBodyHtml(rows) {
+  return rows.map(c => `<tr onclick="location.hash='#/detail/${c.id}'">
+        <td class="ct">${c.collectedAt}</td><td class="ct">${c.publishedAt}</td>
+        <td><b>${esc(c.title)}</b></td><td>${esc(c.blogger)}</td>
+        <td><span class="chip">${esc(c.field)}</span></td>
+        <td><span class="chip hook">${esc(c.hookType)}</span></td>
+        <td class="ct">${c.duration}s</td>
+        <td><b>${fmt(c.likes)}</b></td><td class="ct">${fmt(c.comments)}</td>
+        <td class="ct">${fmt(c.collects)}</td><td class="ct">${fmt(c.shares)}</td>
+        <td><b style="color:${c.ratio >= 1.5 ? "#2e7d32" : c.ratio < 1 ? "#c62828" : "var(--ink)"}">${c.ratio.toFixed(2)}</b></td>
+      </tr>`).join("");
+}
+function renderList() {
+  const cols = [
+    ["collectedAt", "采集日期"], ["publishedAt", "发布日期"], ["title", "标题"], ["blogger", "博主"],
+    ["field", "领域"], ["hookType", "钩子类型"], ["duration", "时长"], ["likes", "点赞"],
+    ["comments", "评论"], ["collects", "收藏"], ["shares", "分享"], ["ratio", "收藏赞比"],
+  ];
+  const rows = listRowsFiltered();
+  const fsel = ([k, n]) => {
+    const vals = [...new Set(D.cases.map(c => c[k]))].sort();
+    return `<select class="fsel" onchange="onColFilter('${k}', this.value)">
+      <option value="">${n}:全部</option>
+      ${vals.map(v => `<option value="${esc(v)}"${colFilters[k] === v ? " selected" : ""}>${esc(v)}</option>`).join("")}
+    </select>`;
+  };
+  return `
+  <div class="card list-toolbar">
+    <input id="listSearch" class="fsearch" type="search" placeholder="🔍 搜索标题 / 博主 / 领域 / 钩子 / 标签…" value="${esc(searchQ)}" oninput="onSearch(this.value)">
+    ${FILTER_COLS.map(fsel).join("")}
+    <span id="listCount" style="color:var(--sub);font-size:12px;margin-left:auto">${rows.length} / ${D.cases.length} 条</span>
+    <button class="fbtn" onclick="onResetFilters()">重置</button>
+  </div>
+  <div class="card" style="padding:0;overflow:auto">
+    <table><thead><tr>
+      ${cols.map(([k, n]) => `<th onclick="setSort('${k}')">${n}${sortKey === k ? `<span class="dir"> ${sortDir > 0 ? "↑" : "↓"}</span>` : ""}</th>`).join("")}
+    </tr></thead><tbody id="listBody">
+      ${listBodyHtml(rows)}
+    </tbody></table>
+    <div style="padding:10px 14px;color:var(--sub);font-size:12px">搜索 + 列筛选 + 表头排序可叠加 · 点击行进入拆解页 · 收藏赞比 ≥1.5 绿色（强工具型）/ &lt;1 红色（围观型）</div>
+  </div>`;
+}
+function updateListBody() {
+  const rows = listRowsFiltered();
+  const body = document.getElementById("listBody");
+  if (body) body.innerHTML = listBodyHtml(rows);
+  const cnt = document.getElementById("listCount");
+  if (cnt) cnt.textContent = `${rows.length} / ${D.cases.length} 条`;
+}
+function onSearch(v) { searchQ = v; updateListBody(); }
+function onColFilter(k, v) { colFilters[k] = v; updateListBody(); }
+function onResetFilters() {
+  searchQ = ""; colFilters = { blogger: "", field: "", hookType: "" };
+  const inp = document.getElementById("listSearch");
+  if (inp) inp.value = "";
+  document.querySelectorAll(".fsel").forEach(s => s.value = "");
+  updateListBody();
+}
+function setSort(k) {
+  if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = -1; }
+  render();
+}
+
+/* ---------- 拆解库 ---------- */
+function renderDetail(id) {
+  const cur = byId(id) || sortedByDate()[0];
+  return `<div class="detail-wrap">
+    <div class="side-list card" style="padding:10px">
+      ${sortedByDate().map(c => `
+        <div class="side-item ${c.id === cur.id ? "active" : ""}" onclick="location.hash='#/detail/${c.id}'">
+          ${esc(c.title.replace(/^英国读博｜/, ""))}
+          <div class="sub2">${esc(c.blogger)} · ${c.duration}s · 👍${fmt(c.likes)}</div>
+        </div>`).join("")}
+    </div>
+    <div>
+      <div class="card d-head">
+        <div class="dt1">${esc(cur.title)}</div>
+        <div class="meta">
+          <span>👤 ${esc(cur.blogger)}</span><span>⏱ ${cur.duration}s</span>
+          <span>发布 ${cur.publishedAt}</span><span>采集 ${cur.collectedAt}</span>
+          <a href="${esc(cur.url)}" target="_blank">打开原视频 ↗</a>
+        </div>
+        <div class="eng">
+          <span>👍 <b>${fmt(cur.likes)}</b></span><span>💬 <b>${fmt(cur.comments)}</b></span>
+          <span>⭐ <b>${fmt(cur.collects)}</b></span><span>🔁 <b>${fmt(cur.shares)}</b></span>
+          <span>收藏赞比 <b>${cur.ratio.toFixed(2)}</b></span>
+        </div>
+        <div class="tags">${cur.tags.map(t => `<span class="chip">${esc(t)}</span>`).join("")}</div>
+      </div>
+
+      <div class="card">
+        <h3>🎣 钩子拆解 <span class="badge">${esc(cur.hook.type)}</span><span class="more">${cur.hook.range}</span></h3>
+        <div class="quote-box">「${esc(cur.hook.quote)}」</div>
+        <div>${esc(cur.hook.explain)}</div>
+      </div>
+
+      <div class="card">
+        <h3>📐 内容结构</h3>
+        <div class="tl">
+          ${cur.structure.map(s => `<div class="tl-item"><div class="tt"><span class="tm">${s.time}</span>${esc(s.label)}</div><div class="dd">${esc(s.desc)}</div></div>`).join("")}
+        </div>
+      </div>
+
+      <div class="sw-grid">
+        <div class="card good"><h4>✅ 优势</h4><ul>${cur.strengths.map(s => `<li>${esc(s)}</li>`).join("")}</ul></div>
+        <div class="card bad"><h4>⚠️ 不足 / 可改进</h4><ul>${cur.weaknesses.map(s => `<li>${esc(s)}</li>`).join("")}</ul></div>
+      </div>
+
+      <div class="card"><h3>📊 数据解读</h3><div>${esc(cur.dataInsight)}</div></div>
+
+      <div class="card">
+        <h3>🗣 可复用话术<span class="more">给你自己拍片用</span></h3>
+        ${cur.scripts.map(s => `<div class="script-card"><div class="q">「${esc(s.quote)}」</div><div class="sc">${esc(s.scene)}</div></div>`).join("")}
+      </div>
+
+      <div class="card">
+        <h3>📜 逐字稿全文<span class="more">共 ${cur.transcript.length} 段</span></h3>
+        <div class="legend">
+          <span><span class="hl-hook">&nbsp;&nbsp;</span> 钩子</span>
+          <span><span class="hl-gold">&nbsp;&nbsp;</span> 金句/亮点</span>
+          <span><span class="hl-cta">&nbsp;&nbsp;</span> CTA</span>
+        </div>
+        <div class="transcript">
+          ${cur.transcript.map(t => `<div class="tr-row"><span class="tm">${mmss(t.s)}</span><span>${t.hl ? `<span class="hl-${t.hl}">${esc(t.t)}</span>` : esc(t.t)}</span></div>`).join("")}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------- 路由 ---------- */
+function render() {
+  const hash = location.hash || "#/overview";
+  const parts = hash.slice(2).split("/");
+  const tab = parts[0] || "overview";
+  document.querySelectorAll("nav a").forEach(a =>
+    a.classList.toggle("active", a.dataset.tab === (tab === "detail" ? "detail" : tab)));
+  app.innerHTML = tab === "list" ? renderList()
+    : tab === "detail" ? renderDetail(parts[1])
+    : renderOverview();
+  window.scrollTo(0, 0);
+}
+document.getElementById("genDate").textContent = D.generatedAt;
+window.addEventListener("hashchange", render);
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "insights": [
+    {
+      "title": "自测用经验条目",
+      "detail": "仅用于 --self-test，验证 insights 引用链路。",
+      "sources": ["selftestcase0000000001"]
+    }
+  ]
+}

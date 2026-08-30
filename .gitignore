@@ -1,0 +1,11 @@
+# config.json contains YOUR private Feishu tokens — never commit or share it.
+config.json
+library.json
+
+# Python
+__pycache__/
+*.pyc
+
+# OS junk
+.DS_Store
+Thumbs.db
