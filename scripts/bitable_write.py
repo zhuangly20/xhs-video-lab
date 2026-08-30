@@ -25,6 +25,7 @@ CFG = load_config()
 FIELDS_SCHEMA = [
     {"type": "text", "name": "标题"},
     {"type": "select", "name": "博主"},
+    {"type": "text", "name": "逐字稿"},
     {"type": "text", "name": "链接", "style": {"type": "url"}},
     {"type": "select", "name": "领域"},
     {"type": "select", "name": "钩子类型"},
@@ -39,7 +40,6 @@ FIELDS_SCHEMA = [
     {"type": "text", "name": "优势"},
     {"type": "text", "name": "不足"},
     {"type": "text", "name": "可复用话术"},
-    {"type": "text", "name": "逐字稿"},
 ]
 SELECT_FIELDS = ["博主", "领域", "钩子类型"]
 
@@ -129,13 +129,12 @@ def table_record_count(token: str) -> int:
 def row_from_analysis(a: dict, transcript_txt: str) -> list:
     ratio = round(a["collects"] / a["likes"], 2) if a["likes"] else 0
     return [
-        a["title"], a["blogger"], a["url"], a["field"], a["hookType"],
+        a["title"], a["blogger"], transcript_txt, a["url"], a["field"], a["hookType"],
         a["publishedAt"] + " 00:00:00", a["collectedAt"] + " 00:00:00",
         a["duration"], a["likes"], a["comments"], a["collects"], a["shares"], ratio,
         "\n".join(f"{i}. {s}" for i, s in enumerate(a["strengths"], 1)),
         "\n".join(f"{i}. {s}" for i, s in enumerate(a["weaknesses"], 1)),
         "\n".join(f"「{s['quote']}」适用：{s['scene']}" for s in a["scripts"]),
-        transcript_txt,
     ]
 
 
@@ -163,9 +162,9 @@ def main():
         raise SystemExit(
             f"[中止] 表里有 {total} 条记录但无法解析出已有笔记 id，"
             "为避免重复写入已停止。请人工检查 +record-list 输出格式后重试。")
-    rows, cols = [], ["标题", "博主", "链接", "领域", "钩子类型", "发布日期", "采集日期",
+    rows, cols = [], ["标题", "博主", "逐字稿", "链接", "领域", "钩子类型", "发布日期", "采集日期",
                       "时长秒", "点赞", "评论", "收藏", "分享", "收藏赞比",
-                      "优势", "不足", "可复用话术", "逐字稿"]
+                      "优势", "不足", "可复用话术"]
     for a, tr_txt in pending:
         if a["id"] in done:
             print(f"[跳过] {a['id']} 已在 Base 中")
