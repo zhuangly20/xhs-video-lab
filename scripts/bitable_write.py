@@ -138,6 +138,27 @@ def row_from_analysis(a: dict, transcript_txt: str) -> list:
     ]
 
 
+def build_transcript_cell(a: dict, workdir: Path) -> str:
+    """逐字稿单元格：存在中文对照翻译时输出中英对照，否则纯原文。"""
+    txt = workdir / "transcripts" / f"{a['id']}.txt"
+    if not txt.exists():
+        return ""
+    zh_path = workdir / "transcripts" / f"{a['id']}.zh.json"
+    tj = workdir / "transcripts" / f"{a['id']}.json"
+    if zh_path.exists() and tj.exists():
+        segs = json.loads(tj.read_text(encoding="utf-8"))["segments"]
+        zh_list = json.loads(zh_path.read_text(encoding="utf-8")).get("segments", [])
+        parts = []
+        for i, s in enumerate(segs):
+            t = s.get("text", "").strip()
+            if not t:
+                continue
+            zh = zh_list[i].get("zh") if i < len(zh_list) and isinstance(zh_list[i], dict) else None
+            parts.append(f"{t}\n{zh}" if zh else t)
+        return "\n".join(parts)
+    return "\n".join(x.strip() for x in txt.read_text(encoding="utf-8").split("\n\n") if x.strip())
+
+
 def main():
     workdir = Path(CFG["workdir"])
     analyses_dir = workdir / "analyses"
@@ -169,8 +190,7 @@ def main():
         if a["id"] in done:
             print(f"[跳过] {a['id']} 已在 Base 中")
             continue
-        rows.append(row_from_analysis(a, "\n".join(
-            x.strip() for x in tr_txt.read_text(encoding="utf-8").split("\n\n") if x.strip())))
+        rows.append(row_from_analysis(a, build_transcript_cell(a, workdir)))
 
     if not rows:
         print("[完成] 没有新记录需要写入")

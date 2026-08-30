@@ -51,6 +51,8 @@ python "<skill>/scripts/pipeline.py" "<小红书链接>"
 
 先读 [references/analysis-rubric.md](references/analysis-rubric.md)（分析框架和 JSON schema）和 [references/taxonomy.md](references/taxonomy.md)（钩子/领域枚举），然后写 `analyses/<id>.json`。
 
+**非中文视频**（PIPELINE_RESULT 里 `needs_zh_translation: true`）：先把逐字稿逐段翻译成中文，写入 `transcripts/<id>.zh.json`（格式见 rubric），之后表格和工作台会自动呈现中英对照。
+
 硬要求（详见 rubric）：钩子必须引用原文并判型；优劣势各 2-4 条且每条挂具体证据（秒数/数字/原文）；话术给句式模板+适用场景。禁止"内容优质"式空话。
 
 ### 阶段 3：写入飞书多维表格

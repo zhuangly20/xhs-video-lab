@@ -24,9 +24,13 @@ def build_transcript(nid: str, workdir: Path, hl: dict) -> list:
     if not tj.exists():
         return []
     segs = json.loads(tj.read_text(encoding="utf-8"))["segments"]
+    zh_path = workdir / "transcripts" / f"{nid}.zh.json"
+    zh_list = []
+    if zh_path.exists():
+        zh_list = json.loads(zh_path.read_text(encoding="utf-8")).get("segments", [])
     hook_kw, gold_kw, cta_kw = hl.get("hook_kw", []), hl.get("gold_kw", []), hl.get("cta_kw", [])
     out = []
-    for s in segs:
+    for i, s in enumerate(segs):
         tag = None
         if any(k in s["text"] for k in hook_kw):
             tag = "hook"
@@ -35,6 +39,10 @@ def build_transcript(nid: str, workdir: Path, hl: dict) -> list:
         elif any(k in s["text"] for k in cta_kw):
             tag = "cta"
         item = {"s": s["start"], "e": s["end"], "t": s["text"]}
+        if i < len(zh_list):
+            zh = zh_list[i].get("zh") if isinstance(zh_list[i], dict) else zh_list[i]
+            if zh:
+                item["zh"] = zh
         if tag:
             item["hl"] = tag
         out.append(item)
@@ -96,6 +104,7 @@ def self_test():
         (wd / "transcripts").mkdir()
         (wd / "analyses").mkdir()
         shutil.copy(fx / "transcript.json", wd / "transcripts" / "selftestcase0000000001.json")
+        shutil.copy(fx / "zh.json", wd / "transcripts" / "selftestcase0000000001.zh.json")
         shutil.copy(fx / "analysis.json", wd / "analyses" / "selftestcase0000000001.json")
         shutil.copy(fx / "insights.json", wd / "insights.json")
 
@@ -106,6 +115,7 @@ def self_test():
         assert len(c["transcript"]) == 3, "逐字稿段数不符"
         assert c["transcript"][0].get("hl") == "hook", "钩子高亮失败"
         assert c["transcript"][2].get("hl") == "cta", "CTA 高亮失败"
+        assert c["transcript"][0].get("zh") == "第一句中文翻译", "中英对照合并失败"
         out = "window.CASE_DATA = " + json.dumps(data, ensure_ascii=False) + ";\n"
         assert "selftestcase0000000001" in out and "测试钩子" in out
         print("[自测通过] 数据合并/收藏赞比/高亮/insights 全链路 OK")

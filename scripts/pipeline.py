@@ -268,6 +268,12 @@ def process_url(url: str, workdir: Path, args) -> dict:
         "collects": meta["collects"], "shares": meta["shares"],
         "audio": str(audio), "transcript": str(tr),
     })
+    tr_data = json.loads(tr.read_text(encoding="utf-8"))
+    lang = tr_data.get("language", "")
+    needs_zh = bool(lang) and lang not in ("zh", "yue")
+    if needs_zh:
+        log(f"  [提示] 检测到非中文视频（{lang}）：请在分析阶段生成中文对照翻译 "
+            f"transcripts/{nid}.zh.json（格式见 analysis-rubric.md）")
     rec["status"] = {"downloaded": True, "transcribed": True,
                      "analyzed": (workdir / "analyses" / f"{nid}.json").exists(),
                      "published": False}
@@ -277,6 +283,7 @@ def process_url(url: str, workdir: Path, args) -> dict:
     return {"id": nid, "status": "ok", "title": title, "duration": duration,
             "blogger": meta["blogger"], "publishedAt": meta["publishedAt"],
             "collectedAt": rec["collectedAt"],
+            "language": lang, "needs_zh_translation": needs_zh,
             "likes": meta["likes"], "comments": meta["comments"],
             "collects": meta["collects"], "shares": meta["shares"],
             "audio": str(audio), "transcript": str(tr),

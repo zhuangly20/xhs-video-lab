@@ -86,6 +86,18 @@
 - 好的经验长这样：「时长与传播量明显负相关：84秒赞1.3万 vs 311秒赞434，甜点区60–140秒」
 - 坏的经验（禁止）：「要注重内容质量」「标题很重要」——不可执行的废话
 
+## 中英对照翻译（非中文视频）
+
+PIPELINE_RESULT 里 `needs_zh_translation: true` 时（检测语言非 zh/yue），在写分析的同时生成 `transcripts/<id>.zh.json`：
+
+```json
+{"segments": [{"zh": "第一段的中文翻译"}, {"zh": "第二段的中文翻译"}]}
+```
+
+- 逐段翻译，段数和顺序与 `<id>.json` 的 segments 一一对应（build 脚本按序号对齐）
+- 口语化译文，专业名词保留英文原文（Claude Code、skill、agent 等）
+- 钩子句和金句按传播文案标准翻译——优先还原语气和记忆点，不要直译
+
 ## 数据来源说明
 
 - id/标题/时长/互动数据/发布时间：阶段 1 pipeline.py 输出的 PIPELINE_RESULT JSON，直接抄

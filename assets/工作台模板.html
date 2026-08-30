@@ -156,6 +156,7 @@ td .ct { color: var(--sub); font-size: 12px; }
 .tr-row { display: flex; gap: 12px; padding: 5px 8px; border-radius: 6px; }
 .tr-row:hover { background: var(--bg); }
 .tr-row .tm { color: var(--sub); font-variant-numeric: tabular-nums; font-size: 12px; width: 44px; flex-shrink: 0; padding-top: 2px; }
+.zh-line { color: var(--sub); font-size: 12px; margin-top: 2px; }
 .legend { display: flex; gap: 12px; margin: 8px 0; font-size: 12px; color: var(--sub); flex-wrap: wrap; }
 .badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 12px; font-weight: 600; background: var(--gold-bg); color: #b26a00; }
 
@@ -398,9 +399,15 @@ function renderDetail(id) {
           <span><span class="hl-hook">&nbsp;&nbsp;</span> 钩子</span>
           <span><span class="hl-gold">&nbsp;&nbsp;</span> 金句/亮点</span>
           <span><span class="hl-cta">&nbsp;&nbsp;</span> CTA</span>
+          <span>英文视频逐段附中文对照</span>
         </div>
         <div class="transcript">
-          ${cur.transcript.map(t => `<div class="tr-row"><span class="tm">${mmss(t.s)}</span><span>${t.hl ? `<span class="hl-${t.hl}">${esc(t.t)}</span>` : esc(t.t)}</span></div>`).join("")}
+          ${cur.transcript.map(t => {
+            const body = t.zh
+              ? `<div>${t.hl ? `<span class="hl-${t.hl}">${esc(t.t)}</span>` : esc(t.t)}</div><div class="zh-line">${esc(t.zh)}</div>`
+              : (t.hl ? `<span class="hl-${t.hl}">${esc(t.t)}</span>` : esc(t.t));
+            return `<div class="tr-row"><span class="tm">${mmss(t.s)}</span><span>${body}</span></div>`;
+          }).join("")}
         </div>
       </div>
     </div>
