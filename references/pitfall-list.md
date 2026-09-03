@@ -38,7 +38,9 @@
 - **计数是中文格式**：`"1.3万"→13000`、`"2万"→20000`，脚本已自动换算；`videoDuration` 单位是毫秒
 
 ### 2.3 飞书群消息解析
-- `+chat-messages-list` 返回的字段是 `content`（不是 `body.content`）；链接在 markdown 形式 `[标题](url)` 里，用正则提取 `https://www\.xiaohongshu\.com/[^\)\s]+`
+- `+chat-messages-list` 返回的字段是 `content`（不是 `body.content`）；链接在 markdown 形式 `[标题](url)` 里，用正则提取
+- **提取正则必须同时覆盖两个域名**：`https://(?:www\.xiaohongshu\.com|xhslink\.cn)/[^\)\s]+`——只写 xiaohongshu.com 会把 xhslink 短链全部漏掉（已踩过：4 条新短链被正则丢弃）
+- 短链解析要在**去重之前**完成：xhslink 链接在解析前没有 note_id，先去重会把它们当空 ID 丢弃（已踩过）
 
 ## 3. 转写
 

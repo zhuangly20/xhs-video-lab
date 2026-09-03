@@ -304,14 +304,18 @@ def urls_from_group() -> list[str]:
     msgs = json.loads(out.stdout)["data"]["messages"]
     urls = []
     for m in msgs:
-        urls += re.findall(r"https://www\.xiaohongshu\.com/[^\)\s]+", m.get("content", ""))
+        urls += re.findall(r"https://(?:www\.xiaohongshu\.com|xhslink\.cn)/[^\)\s]+", m.get("content", ""))
     seen, uniq = set(), []
     for u in urls:
-        if "&" in u:
-            u = u.replace("&amp;", "&")
-        if note_id(u) and note_id(u) not in seen:
-            seen.add(note_id(u))
-            uniq.append(u)
+        u = u.replace("&amp;", "&")
+        try:
+            r = resolve_url(u)  # 短链在此解析成完整链接，否则 note_id 为空会被误丢
+        except Exception:
+            r = u
+        nid = note_id(r)
+        if nid and nid not in seen:
+            seen.add(nid)
+            uniq.append(r)
     return uniq
 
 
