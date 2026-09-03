@@ -167,6 +167,11 @@ td .ct { color: var(--sub); font-size: 12px; }
 .fsel { padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; background: #fff; color: var(--ink); max-width: 180px; }
 .fbtn { padding: 7px 14px; border: 1px solid var(--line); background: #fff; border-radius: 8px; font-size: 13px; cursor: pointer; color: var(--sub); }
 .fbtn:hover { color: var(--red); border-color: var(--red); }
+.fbtn:disabled { opacity: 0.4; cursor: default; }
+.fbtn:disabled:hover { color: var(--sub); border-color: var(--line); }
+.pager { display: flex; gap: 8px; align-items: center; padding: 12px 14px; flex-wrap: wrap; }
+.pager b { color: var(--red); }
+.pager .fsel { max-width: 130px; margin-left: auto; }
 
 @media (max-width: 900px) {
   .stat-grid { grid-template-columns: repeat(3, 1fr); }
@@ -259,6 +264,7 @@ function renderOverview() {
 /* ---------- 明细表 ---------- */
 let sortKey = "collectedAt", sortDir = -1;
 let searchQ = "";
+let pageSize = 100, currentPage = 1;
 const FILTER_COLS = [["blogger", "博主"], ["field", "领域"], ["hookType", "钩子类型"]];
 let colFilters = { blogger: "", field: "", hookType: "" };
 
@@ -290,6 +296,31 @@ function listBodyHtml(rows) {
         <td><b style="color:${c.ratio >= 1.5 ? "#2e7d32" : c.ratio < 1 ? "#c62828" : "var(--ink)"}">${c.ratio.toFixed(2)}</b></td>
       </tr>`).join("");
 }
+function totalPages(total) { return pageSize ? Math.max(1, Math.ceil(total / pageSize)) : 1; }
+function clampPage(total) {
+  const pages = totalPages(total);
+  if (currentPage > pages) currentPage = pages;
+  if (currentPage < 1) currentPage = 1;
+}
+function pageSlice(rows) {
+  if (!pageSize) return rows;
+  const start = (currentPage - 1) * pageSize;
+  return rows.slice(start, start + pageSize);
+}
+function pagerHtml(total) {
+  const pages = totalPages(total);
+  const opts = [10, 50, 100, 200, 0].map(n =>
+    `<option value="${n}"${pageSize === n ? " selected" : ""}>${n === 0 ? "全部" : n + " 条/页"}</option>`).join("");
+  return `<div class="pager" id="pagerBar">
+    <span style="color:var(--sub);font-size:12px">共 ${total} 条</span>
+    <button class="fbtn" onclick="setPage(1)"${currentPage === 1 ? " disabled" : ""}>« 首页</button>
+    <button class="fbtn" onclick="setPage(${currentPage - 1})"${currentPage === 1 ? " disabled" : ""}>‹ 上一页</button>
+    <span style="font-size:13px">第 <b>${currentPage}</b> / ${pages} 页</span>
+    <button class="fbtn" onclick="setPage(${currentPage + 1})"${currentPage >= pages ? " disabled" : ""}>下一页 ›</button>
+    <button class="fbtn" onclick="setPage(${pages})"${currentPage >= pages ? " disabled" : ""}>末页 »</button>
+    <select class="fsel" onchange="setPageSize(this.value)">${opts}</select>
+  </div>`;
+}
 function renderList() {
   const cols = [
     ["collectedAt", "采集日期"], ["publishedAt", "发布日期"], ["title", "标题"], ["blogger", "博主"],
@@ -297,6 +328,7 @@ function renderList() {
     ["comments", "评论"], ["collects", "收藏"], ["shares", "分享"], ["ratio", "收藏赞比"],
   ];
   const rows = listRowsFiltered();
+  clampPage(rows.length);
   const fsel = ([k, n]) => {
     const vals = [...new Set(D.cases.map(c => c[k]))].sort();
     return `<select class="fsel" onchange="onColFilter('${k}', this.value)">
@@ -315,22 +347,29 @@ function renderList() {
     <table><thead><tr>
       ${cols.map(([k, n]) => `<th onclick="setSort('${k}')">${n}${sortKey === k ? `<span class="dir"> ${sortDir > 0 ? "↑" : "↓"}</span>` : ""}</th>`).join("")}
     </tr></thead><tbody id="listBody">
-      ${listBodyHtml(rows)}
+      ${listBodyHtml(pageSlice(rows))}
     </tbody></table>
-    <div style="padding:10px 14px;color:var(--sub);font-size:12px">搜索 + 列筛选 + 表头排序可叠加 · 点击行进入拆解页 · 收藏赞比 ≥1.5 绿色（强工具型）/ &lt;1 红色（围观型）</div>
+    <div id="listPager">${pagerHtml(rows.length)}</div>
+    <div style="padding:0 14px 10px;color:var(--sub);font-size:12px">搜索 + 列筛选 + 表头排序可叠加 · 点击行进入拆解页 · 收藏赞比 ≥1.5 绿色（强工具型）/ &lt;1 红色（围观型）</div>
   </div>`;
 }
 function updateListBody() {
   const rows = listRowsFiltered();
+  clampPage(rows.length);
   const body = document.getElementById("listBody");
-  if (body) body.innerHTML = listBodyHtml(rows);
+  if (body) body.innerHTML = listBodyHtml(pageSlice(rows));
   const cnt = document.getElementById("listCount");
   if (cnt) cnt.textContent = `${rows.length} / ${D.cases.length} 条`;
+  const pager = document.getElementById("listPager");
+  if (pager) pager.innerHTML = pagerHtml(rows.length);
 }
-function onSearch(v) { searchQ = v; updateListBody(); }
-function onColFilter(k, v) { colFilters[k] = v; updateListBody(); }
+function setPage(p) { currentPage = p; updateListBody(); }
+function setPageSize(v) { pageSize = Number(v); currentPage = 1; updateListBody(); }
+function onSearch(v) { searchQ = v; currentPage = 1; updateListBody(); }
+function onColFilter(k, v) { colFilters[k] = v; currentPage = 1; updateListBody(); }
 function onResetFilters() {
   searchQ = ""; colFilters = { blogger: "", field: "", hookType: "" };
+  currentPage = 1;
   const inp = document.getElementById("listSearch");
   if (inp) inp.value = "";
   document.querySelectorAll(".fsel").forEach(s => s.value = "");
