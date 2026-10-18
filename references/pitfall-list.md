@@ -87,7 +87,8 @@
 
 ## 6. 工作台 HTML
 
-- 页面缓存：改了 html/js 后浏览器可能用旧缓存，验证时加 `?v=N` 参数强制刷新
+- 页面缓存：改了 html/js 后浏览器可能用旧缓存，验证时加 `?v=N` 参数强制刷新；模板里 data.js 用 document.write 加 `?t=Date.now()` 防缓存
+- 粘性元素遮挡假象：header/th 的 `position: sticky` 会让首行数据在轻微滚动后被不透明导航条盖住，用户看到的是"少了一条/排序不对"（且 th 的 sticky 在 border-collapse:collapse 下本来就无效）。症状：只有排在第一位的那条"消失"，换列排序就正常。修复=去掉 sticky（2026-10 v3），排查可用 evaluate_script 对比"数据第一行"与 elementFromPoint(视口顶部) 是否同一行
 - 自动化浏览器里"键盘删除清空输入框"不触发 input 事件——这是自动化工具怪癖，**真实浏览器没问题**，不要为此改页面代码
 - 工作台数据 schema 见 analysis-rubric.md，改字段必须模板与生成器同步
 

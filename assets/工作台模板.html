@@ -23,7 +23,7 @@ body {
   background: var(--bg); color: var(--ink); font-size: 14px; line-height: 1.65;
 }
 header {
-  position: sticky; top: 0; z-index: 10; background: var(--card);
+  background: var(--card);
   border-bottom: 1px solid var(--line);
   display: flex; align-items: center; gap: 28px; padding: 0 24px; height: 56px;
 }
@@ -88,7 +88,7 @@ table { width: 100%; border-collapse: collapse; }
 th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); }
 th {
   font-size: 12px; color: var(--sub); cursor: pointer; user-select: none;
-  white-space: nowrap; background: #fafbfc; position: sticky; top: 56px;
+  white-space: nowrap; background: #fafbfc;
 }
 th:hover { color: var(--ink); }
 th .dir { color: var(--red); }
@@ -191,11 +191,13 @@ td .ct { color: var(--sub); font-size: 12px; }
     <a href="#/list" data-tab="list">📋 明细表</a>
     <a href="#/detail" data-tab="detail">🎬 拆解库</a>
   </nav>
-  <div class="snapshot">数据快照 <span id="genDate"></span></div>
+  <div class="snapshot">工作台 v3 · 数据快照 <span id="genDate"></span></div>
 </header>
 <main id="app"></main>
 
-<script src="data.js"></script>
+<script>
+document.write('<script src="data.js?t=' + Date.now() + '"><\/script>');
+</script>
 <script>
 const D = window.CASE_DATA;
 const app = document.getElementById("app");
@@ -204,7 +206,10 @@ const fmt = n => n >= 10000 ? (n / 10000).toFixed(1).replace(/\.0$/, "") + "万"
 const mmss = s => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const byId = id => D.cases.find(c => c.id === id);
-const sortedByDate = () => [...D.cases].sort((a, b) => (b.collectedAt + b.id).localeCompare(a.collectedAt + a.id));
+/* 日期列用普通字符串比较：localeCompare 的行为随浏览器语言环境变化，不能保证日期稳定排序 */
+const cmpStr = (x, y) => (x < y ? -1 : x > y ? 1 : 0);
+const isDateKey = k => k === "collectedAt" || k === "publishedAt";
+const sortedByDate = () => [...D.cases].sort((a, b) => cmpStr(b.collectedAt + b.id, a.collectedAt + a.id));
 
 /* ---------- 总览 ---------- */
 function renderOverview() {
@@ -281,7 +286,9 @@ function listRowsFiltered() {
     return true;
   }).sort((a, b) => {
     const x = a[sortKey], y = b[sortKey];
-    return (typeof x === "number" ? x - y : String(x).localeCompare(String(y))) * sortDir;
+    if (typeof x === "number") return (x - y) * sortDir;
+    const c = isDateKey(sortKey) ? cmpStr(String(x), String(y)) : String(x).localeCompare(String(y));
+    return c * sortDir;
   });
 }
 function listBodyHtml(rows) {
